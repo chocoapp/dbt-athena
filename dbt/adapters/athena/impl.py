@@ -115,7 +115,7 @@ class AthenaAdapter(SQLAdapter):
                             logger.error("Failed to delete object Key='{}', Code='{}', Message='{}', s3_bucket_name='{}'", err["Key"], err["Code"], err["Message"], bucket_name)
                     if "Deleted" in res:
                         for deleted in res["Deleted"]:
-                            logger.debug(f"Deleted {deleted['Key']}")
+                            logger.info(f"Deleted {deleted['Key']}")
                 if is_all_successful is False:
                     raise RuntimeException("Failed to clean up table partitions.")
 
