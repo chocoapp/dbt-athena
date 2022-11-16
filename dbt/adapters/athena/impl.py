@@ -109,6 +109,7 @@ class AthenaAdapter(SQLAdapter):
                 s3_bucket = s3_resource.Bucket(bucket_name)
                 logger.info(f"Deleting files based on prefix: '{prefix}")
                 response = s3_bucket.objects.filter(Prefix=prefix).delete()
+                is_all_successful = True
                 for res in response:
                     if "Errors" in res:
                         for err in res["Errors"]:
