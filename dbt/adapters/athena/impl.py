@@ -95,6 +95,8 @@ class AthenaAdapter(SQLAdapter):
             if e.response["Error"]["Code"] == "EntityNotFoundException":
                 logger.debug(f"Table '{table_name}' does not exists - Ignoring")
                 return
+            else:
+                raise e
 
         if table is not None:
             logger.debug(f"Deleting table data from '{table['Table']['StorageDescriptor']['Location']}'")
