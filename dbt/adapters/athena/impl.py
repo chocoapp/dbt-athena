@@ -107,6 +107,7 @@ class AthenaAdapter(SQLAdapter):
                 prefix = m.group(2)
                 s3_resource = client.session.resource("s3", region_name=client.region_name)
                 s3_bucket = s3_resource.Bucket(bucket_name)
+                logger.info(f"Deleting files based on prefix: '{prefix}")
                 response = s3_bucket.objects.filter(Prefix=prefix).delete()
                 for res in response:
                     if "Errors" in res:
@@ -117,7 +118,7 @@ class AthenaAdapter(SQLAdapter):
                         for deleted in res["Deleted"]:
                             logger.info(f"Deleted {deleted['Key']}")
                 if is_all_successful is False:
-                    raise RuntimeException("Failed to clean up table partitions.")
+                    raise RuntimeException("Failed to clean up table")
 
     @available
     def quote_seed_column(self, column: str, quote_config: Optional[bool]) -> str:
