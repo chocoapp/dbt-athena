@@ -13,6 +13,7 @@ from dbt.adapters.sql import SQLAdapter
 from dbt.contracts.graph.compiled import CompileResultNode
 from dbt.contracts.graph.manifest import Manifest
 from dbt.events import AdapterLogger
+from dbt.exceptions import RuntimeException
 
 from dbt.adapters.athena import AthenaConnectionManager
 from dbt.adapters.athena.relation import AthenaRelation, AthenaSchemaSearchMap
@@ -104,7 +105,17 @@ class AthenaAdapter(SQLAdapter):
                 prefix = m.group(2)
                 s3_resource = client.session.resource("s3", region_name=client.region_name)
                 s3_bucket = s3_resource.Bucket(bucket_name)
-                s3_bucket.objects.filter(Prefix=prefix).delete()
+                response = s3_bucket.objects.filter(Prefix=prefix).delete()
+                for res in response:
+                    if "Errors" in res:
+                        for err in res["Errors"]:
+                            is_all_successful = False
+                            logger.error("Failed to delete object Key='{}', Code='{}', Message='{}', s3_bucket_name='{}'", err["Key"], err["Code"], err["Message"], bucket_name)
+                    if "Deleted" in res:
+                        for deleted in res["Deleted"]:
+                            logger.debug(f"Deleted {deleted['Key']}")
+                if is_all_successful is False:
+                    raise RuntimeException("Failed to clean up table partitions.")
 
     @available
     def quote_seed_column(self, column: str, quote_config: Optional[bool]) -> str:
