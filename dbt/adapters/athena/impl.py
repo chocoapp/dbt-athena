@@ -120,6 +120,30 @@ class AthenaAdapter(SQLAdapter):
                             logger.info(f"Deleted {deleted['Key']}")
                 if is_all_successful is False:
                     raise RuntimeException("Failed to clean up table")
+    
+    def prune_external_location(self, external_location: str):
+        conn = self.connections.get_thread_connection()
+        client = conn.handle
+        s3_resource = client.session.resource("s3", region_name=client.region_name)
+        p = re.compile("s3://([^/]*)/(.*)")
+        m = p.match(external_location)
+        if m is not None:
+            bucket_name = m.group(1)
+            prefix = m.group(2)
+            s3_bucket = s3_resource.Bucket(bucket_name)
+            s3_bucket.objects.filter(Prefix=prefix).delete()
+            response = s3_bucket.objects.filter(Prefix=prefix).delete()
+            is_all_successful = True
+            for res in response:
+                if "Errors" in res:
+                    for err in res["Errors"]:
+                        is_all_successful = False
+                        logger.error("Failed to delete object Key='{}', Code='{}', Message='{}', s3_bucket_name='{}'", err["Key"], err["Code"], err["Message"], bucket_name)
+                if "Deleted" in res:
+                    for deleted in res["Deleted"]:
+                        logger.info(f"Deleted {deleted['Key']}")
+            if is_all_successful is False:
+                raise RuntimeException("Failed to delete all files from s3 location")
 
     @available
     def quote_seed_column(self, column: str, quote_config: Optional[bool]) -> str:

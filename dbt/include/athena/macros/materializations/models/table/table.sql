@@ -1,5 +1,6 @@
 {% materialization table, adapter='athena' -%}
   {%- set identifier = model['alias'] -%}
+  {%- set external_location = config.get('external_location', default=none) -%}
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
   {%- set target_relation = api.Relation.create(identifier=identifier,
@@ -14,6 +15,10 @@
   {%- endif -%}
 
   -- build model
+  {%- if external_location %}
+    {{ adapter.prune_external_location(external_location) }}
+  {% endif %}
+
   {% call statement('main') -%}
     {{ create_table_as(False, target_relation, sql) }}
   {% endcall -%}
