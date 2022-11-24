@@ -121,6 +121,7 @@ class AthenaAdapter(SQLAdapter):
                 if is_all_successful is False:
                     raise RuntimeException("Failed to clean up table")
     
+    @available
     def prune_external_location(self, external_location: str):
         conn = self.connections.get_thread_connection()
         client = conn.handle
