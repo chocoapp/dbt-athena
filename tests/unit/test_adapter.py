@@ -320,7 +320,7 @@ class TestAthenaAdapter:
         self.mock_aws_service.add_data_in_table("table")
         self.adapter.acquire_connection("dummy")
         self.adapter.clean_up_table(DATABASE_NAME, "table")
-        assert "Deleting table data from 's3://test-dbt-athena-test-delete-partitions/tables/table/'" in caplog.text
+        assert "Deleting table data from 's3://test-dbt-athena-test-delete-partitions/tables/table'" in caplog.text
         s3 = boto3.client("s3", region_name=AWS_REGION)
         objs = s3.list_objects_v2(Bucket=BUCKET)
         assert objs["KeyCount"] == 0
@@ -462,6 +462,16 @@ class TestAthenaAdapter:
         self.adapter.acquire_connection("dummy")
         self.adapter.list_relations_without_caching(schema_relation)
         parent_list_relations_without_caching.assert_called_once_with(schema_relation)
+
+    @pytest.mark.parametrize(
+        "s3_path,expected",
+        [
+            ("s3://my-bucket/test-dbt/tables/schema/table", ("my-bucket", "test-dbt/tables/schema/table/")),
+            ("s3://my-bucket/test-dbt/tables/schema/table/", ("my-bucket", "test-dbt/tables/schema/table/")),
+        ],
+    )
+    def test_parse_s3_path(self, s3_path, expected):
+        assert self.adapter._parse_s3_path(s3_path) == expected
 
 
 class TestAthenaFilterCatalog:
